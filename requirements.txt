@@ -1,0 +1,5 @@
+pyspark>=3.4.0
+boto3>=1.26.0
+gspread>=5.10.0
+google-auth>=2.20.0
+psycopg2-binary>=2.9.0

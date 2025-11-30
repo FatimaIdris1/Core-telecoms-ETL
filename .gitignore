@@ -416,3 +416,38 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+
+## FILES THAT CONCERN ME
+# Ignore folder y
+y/
+
+# Terraform directories and generated files
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Ignore Terraform
+variable.tf
+s3_bucket.tf
+
+# Python virtual environments
+.venv/
+venv/
+
+# AWS-related dirs
+aws/
+aws_infrastructure/.terraform.lock.hcl
+aws_infrastructure/.terraform/
+
+# Logs and temp files
+pipeline.log
+new.py
+
+# Ignore all JSON and ZIP files (your choice)
+*.json
+*.zip
+
+# Terraform plan output
+tfplan

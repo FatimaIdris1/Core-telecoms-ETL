@@ -1,0 +1,79 @@
+resource "aws_iam_user" "airflow_local" {
+  name = "airflow-local"
+
+  tags = {
+    Project = "Coretelecomms"
+    Purpose = "Local development access to S3"
+  }
+}
+
+resource "aws_iam_access_key" "airflow_local" {
+  user = aws_iam_user.airflow_local.name
+}
+
+output "airflow_access_key_id" {
+  value     = aws_iam_access_key.airflow_local.id
+  sensitive = true
+}
+
+output "airflow_secret_access_key" {
+  value     = aws_iam_access_key.airflow_local.secret
+  sensitive = true
+}
+
+resource "aws_iam_policy" "s3_access" {
+  name        = "customers-s3-access"
+  description = "Allow read/write to specified buckets"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.coretelecomms.arn,
+          "${aws_s3_bucket.coretelecomms.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_user_policy_attachment" "airflow_s3" {
+  user       = aws_iam_user.airflow_local.name
+  policy_arn = aws_iam_policy.s3_access.arn
+}
+
+
+
+resource "aws_iam_policy" "airflow_secrets_access" {
+  name = "airflow-secrets-manager-access"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.google_cloud_secrets.arn,
+          aws_db_instance.coretelecomms_db_instance.master_user_secret[0].secret_arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_user_policy_attachment" "airflow_secrets" {
+  user       = aws_iam_user.airflow_local.name
+  policy_arn = aws_iam_policy.airflow_secrets_access.arn
+}
