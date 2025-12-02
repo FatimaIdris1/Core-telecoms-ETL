@@ -438,6 +438,7 @@ venv/
 
 # AWS-related dirs
 aws/
+aws/tfplan
 aws_infrastructure/.terraform.lock.hcl
 aws_infrastructure/.terraform/
 
@@ -451,3 +452,15 @@ new.py
 
 # Terraform plan output
 tfplan
+
+#Airflow files
+airflow/.venv
+airflow/config
+airflow/airflow.cfg
+airflow/airflow.db
+airflow/docker-compose.yaml
+airflow/get-docker.sh 
+airflow/simple
+airflow/simple_auth_manager_passwords.json.generated
+airflow/Logs
+airflow/.env
