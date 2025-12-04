@@ -1,0 +1,57 @@
+# Terraform directories and generated files
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Ignore Terraform
+variable.tf
+s3_bucket.tf
+
+# Python virtual environments
+.venv/
+venv/
+
+# AWS-related dirs
+aws/
+aws/tfplan
+aws_infrastructure/.terraform.lock.hcl
+aws_infrastructure/.terraform/
+aws_infrastructure/variable.tf
+
+# Logs and temp files
+pipeline.log
+new.py
+
+# Ignore all JSON and ZIP files (your choice)
+*.json
+*.zip
+
+# Terraform plan output
+tfplan
+
+#Airflow files
+airflow/.venv
+airflow/config
+airflow/airflow.cfg
+airflow/airflow.db
+airflow/docker-compose.yaml
+airflow/get-docker.sh 
+airflow/simple
+airflow/simple_auth_manager_passwords.json.generated
+airflow/Logs
+airflow/dags/plugins/test.py
+airflow/dags/plugins/.env
+airflow/dags/plugins/trial.py
+
+airflow/.env
+
+snowflake/
+
+load.py
+
+snow--.tf
+dbt/coretelecom/.user.yml
+dbt/telecom/profiles.yml 
+
+profiles.yml

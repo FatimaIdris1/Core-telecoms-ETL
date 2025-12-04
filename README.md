@@ -229,7 +229,88 @@ This project follows a **DataOps CI/CD approach**, meaning infrastructure, ETL, 
 
 ---
 
-## Final Summary
+## **Docker & Docker Compose Overview**
+
+This setup uses a custom Docker image (coretelecoms-etl:latest) and docker-compose to provide a full ETL and data workflow environment. Airflow orchestrates pipelines, dbt builds Snowflake models, and Terraform manages infrastructure, all in isolated containers with code synced from your host machine.
+---
+
+### **Docker Image**
+
+* Contains **Airflow**, **Python dependencies**, **dbt**, and **ETL scripts**.
+* Provides a self-contained, reproducible environment for ETL workflows.
+
+---
+
+### **Docker Compose Services**
+
+1. **Airflow (`airflow`)**
+
+   * Runs webserver and scheduler.
+   * Orchestrates ETL tasks: S3 copy, Postgres extract, transformations, Snowflake load.
+   * Mounts DAGs, plugins, dbt project, and Terraform folders.
+   * Exposes UI at `localhost:8080`.
+   * Uses Snowflake credentials from environment variables.
+
+2. **Terraform (`terraform`)**
+
+   * Runs Terraform commands in a separate container.
+   * Mounts `aws_infrastructure` folder.
+   * Commands:
+
+     ```bash
+     docker-compose exec terraform terraform plan
+     docker-compose exec terraform terraform apply
+     ```
+
+3. **dbt (`dbt`)**
+
+   * Runs dbt commands in a separate container.
+   * Mounts `dbt` folder.
+   * Uses Snowflake credentials from environment variables.
+   * Commands:
+
+     ```bash
+     docker-compose exec dbt dbt run --project-dir /opt/project/dbt
+     ```
+
+---
+
+### **Workflow**
+
+* Airflow orchestrates ETL pipelines.
+* DAGs extract from S3/Postgres, transform, and load to Snowflake.
+* dbt builds Snowflake models.
+* Terraform manages AWS infrastructure.
+* Volumes sync local code with containers.
+
+---
+
+### **Usage**
+
+Start services:
+
+```bash
+docker-compose up -d
+```
+
+Access Airflow: [http://localhost:8080](http://localhost:8080)
+
+Run dbt:
+
+```bash
+docker-compose exec dbt dbt run --project-dir /opt/project/dbt
+```
+
+Run Terraform:
+
+```bash
+docker-compose exec terraform terraform plan
+docker-compose exec terraform terraform apply
+```
+
+---
+
+## Summary
 
 This project delivers a complete, production-ready data pipeline for processing telecom customer complaints from multiple sources into a unified Snowflake warehouse. Using Airflow for orchestration, Python for extraction, Snowflake for scalable analytics storage, and dbt for modeling, the pipeline centralizes raw data into reliable fact and dimension tables. Terraform automates and provisions all cloud and warehouse resources, ensuring consistency and reproducibility across environments.
 
@@ -242,3 +323,5 @@ The solution enables:
 * End-to-end CI/CD for infrastructure, ETL code, and analytics models
 
 All components of the pipeline can be traced directly from the folders listed above, allowing full visibility into extraction scripts, infrastructure definitions, and dbt transformations. This makes the project modular, scalable, and ready for real telecom analytics workloads.
+
+The Docker setup uses a **custom Docker image** (`coretelecoms-etl:latest`) and **docker-compose** to provide a complete, containerized environment for the pipeline. Airflow orchestrates the ETL workflows and manages task scheduling, dbt builds and tests Snowflake models, and Terraform handles cloud infrastructure provisioning. Each service runs in its own isolated container, ensuring consistency, reproducibility, and separation of concerns, while local project files are synced with the containers to keep code up-to-date. This setup enables development, testing, and deployment of the entire data workflow in a controlled, integrated environment.
