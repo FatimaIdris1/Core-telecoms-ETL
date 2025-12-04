@@ -1,21 +1,28 @@
-name: Deploy Airflow to MWAA
+name: Trigger Airflow DAG
 
 on:
   push:
     paths:
-      - 'airflow/**'
+      - 'airflow/dags/pipeline.py'
   workflow_dispatch:
 
 jobs:
-  deploy:
+  trigger-dag:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: AWS Sync DAGs
-        run: |
-          aws s3 sync airflow s3://YOUR_MWAA_BUCKET/ --delete
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      # - name: Trigger Airflow DAG
+      #   env:
+        #   AIRFLOW_URL: ${{ secrets.AIRFLOW_URL }}      
+        #   AIRFLOW_USERNAME: ${{ secrets.AIRFLOW_USERNAME }}
+        #   AIRFLOW_PASSWORD: ${{ secrets.AIRFLOW_PASSWORD }}
+        #   DAG_ID: core_etl_pipeline
+        # run: |
+        #   echo "Triggering DAG $DAG_ID"
+        #   curl -X POST "$AIRFLOW_URL/api/v1/dags/$DAG_ID/dagRuns" \
+        #   -u "$AIRFLOW_USERNAME:$AIRFLOW_PASSWORD" \
+        #   -H "Content-Type: application/json" \
+        #   -d '{"conf":{}}'

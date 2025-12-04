@@ -22,13 +22,13 @@ jobs:
       - name: Run dbt tests
         run: dbt test --project-dir dbt/
 
-      - name: Run dbt production models
-        if: github.ref == 'refs/heads/main'
-        run: dbt run --project-dir dbt/
-        env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+      # - name: Run dbt production models
+      #   if: github.ref == 'refs/heads/main'
+      #   run: dbt run --project-dir dbt/
+      #   env:
+      #     SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      #     SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      #     SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      #     SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      #     SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      #     SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
