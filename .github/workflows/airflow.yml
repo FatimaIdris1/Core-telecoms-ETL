@@ -14,15 +14,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # - name: Trigger Airflow DAG
-      #   env:
-        #   AIRFLOW_URL: ${{ secrets.AIRFLOW_URL }}      
-        #   AIRFLOW_USERNAME: ${{ secrets.AIRFLOW_USERNAME }}
-        #   AIRFLOW_PASSWORD: ${{ secrets.AIRFLOW_PASSWORD }}
-        #   DAG_ID: core_etl_pipeline
-        # run: |
-        #   echo "Triggering DAG $DAG_ID"
-        #   curl -X POST "$AIRFLOW_URL/api/v1/dags/$DAG_ID/dagRuns" \
-        #   -u "$AIRFLOW_USERNAME:$AIRFLOW_PASSWORD" \
-        #   -H "Content-Type: application/json" \
-        #   -d '{"conf":{}}'
+      - name: Trigger Airflow DAG
+        env:
+          AIRFLOW_URL: ${{ secrets.AIRFLOW_URL }}      
+          AIRFLOW_USERNAME: ${{ secrets.AIRFLOW_USERNAME }}
+          AIRFLOW_PASSWORD: ${{ secrets.AIRFLOW_PASSWORD }}
+          DAG_ID: core_etl_pipeline
+        run: |
+          echo "Triggering DAG $DAG_ID"
+          curl -X POST "$AIRFLOW_URL/api/v1/dags/$DAG_ID/dagRuns" \
+          -u "$AIRFLOW_USERNAME:$AIRFLOW_PASSWORD" \
+          -H "Content-Type: application/json" \
+          -d '{"conf":{}}'
