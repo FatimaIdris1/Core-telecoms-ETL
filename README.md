@@ -149,3 +149,96 @@ aws_infrastructure/
 This section provisions the entire environment including VPC networking, IAM roles, secret storage, S3 buckets, PostgreSQL access, and Snowflake cloud resources.
 
 ---
+
+
+## dbt Models (Facts and Dimensions)
+
+The analytics layer of this project is fully managed in dbt. After ingestion into `CORETELECOM_STAGING`, dbt transforms the raw data into clean, analysis-ready tables under `CORETELECOM_TRANSFORMED`.
+
+All models are in:
+
+```
+dbt/models/
+│── facts/
+│── dimensions/
+```
+
+You can open each file above to view the transformation logic.
+
+---
+
+#### Fact Tables (Event-Driven Complaint Records)
+
+Located in: `dbt/models/facts/`
+
+These tables represent **customer complaint events across different channels**. They grow continuously and reference customers and agents using foreign keys. Each fact file contains join logic, standardization, and cleanup of staged data.
+
+| File                               | Resulting Table                | What It Represents                                                                                          |
+| ---------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `fact_call_center_logs.sql`        | `fact_call_center_logs`        | Phone-based customer complaints, including agent handling, duration, resolution status, and complaint type. |
+| `fact_social_media_complaints.sql` | `fact_social_media_complaints` | Complaints extracted from social platforms with sentiment and user details.                                 |
+| `fact_web_complaints.sql`          | `fact_web_complaints`          | Complaints submitted via website forms stored in Postgres, including request category and response status.  |
+
+Each fact table supports KPIs such as complaints per channel, average resolution time, customer churn risk, and agent performance.
+
+---
+
+#### Dimension Tables (Lookup and Reference Data)
+
+Located in: `dbt/models/dimensions/`
+
+These tables hold **customer and agent descriptive information** that provides context for the facts. They change slowly compared to fact tables.
+
+| File                | Resulting Table | What It Contains                                                                              |
+| ------------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| `dim_customers.sql` | `dim_customers` | Clean customer demographics: standardized names, DOB, gender, signup info, and IDs.           |
+| `dim_agents.sql`    | `dim_agents`    | Standardized customer care agent data: name, experience, state, and support role information. |
+
+Dimensions allow grouping and filtering of facts, for example tracking complaints by gender, location, or agent experience.
+
+---
+
+### CI/CD Pipeline (How Code Is Validated and Deployed)
+
+This project follows a **DataOps CI/CD approach**, meaning infrastructure, ETL, and analytics models are all version-controlled, tested, and deployed automatically.
+
+| Component                         | CI (Checks Before Merge)                                    | CD (Production Deployment)            | Output                       |
+| --------------------------------- | ----------------------------------------------------------- | ------------------------------------- | ---------------------------- |
+| Terraform (AWS + Snowflake Infra) | Validate configuration and preview changes (`plan`)         | Provision infrastructure (`apply`)    | MWAA, IAM roles, S3 buckets  |
+| Airflow (DAGs + Plugins)          | Lint and test Python DAGs and extract code                  | Upload to MWAA-linked S3 bucket       | Updated pipeline execution   |
+| dbt (Warehouse Models)            | Validate SQL + run schema tests (`dbt test`, `dbt compile`) | Build models in Snowflake (`dbt run`) | Updated facts and dimensions |
+
+---
+
+### How the Above CI/CD Works
+
+**Terraform**
+
+* Code is checked before deployment to avoid misconfigured cloud resources.
+* Only approved plans are deployed, creating infrastructure such as MWAA, IAM, S3, and Snowflake roles.
+
+**Airflow**
+
+* Python extraction logic is tested before merging.
+* Once deployed, the DAGs automatically run in MWAA with no manual upload needed.
+
+**dbt**
+
+* Every schema change and model update is validated before deployment.
+* When merged, dbt builds fresh fact and dimension tables in Snowflake.
+
+---
+
+## Final Summary
+
+This project delivers a complete, production-ready data pipeline for processing telecom customer complaints from multiple sources into a unified Snowflake warehouse. Using Airflow for orchestration, Python for extraction, Snowflake for scalable analytics storage, and dbt for modeling, the pipeline centralizes raw data into reliable fact and dimension tables. Terraform automates and provisions all cloud and warehouse resources, ensuring consistency and reproducibility across environments.
+
+The solution enables:
+
+* Automated daily ingestion from S3, Google Sheets, and Postgres
+* Incremental and duplicate-safe loading using append logic
+* Standardized transformations through dbt facts and dimensions
+* Automated schema validation and testing before deployment
+* End-to-end CI/CD for infrastructure, ETL code, and analytics models
+
+All components of the pipeline can be traced directly from the folders listed above, allowing full visibility into extraction scripts, infrastructure definitions, and dbt transformations. This makes the project modular, scalable, and ready for real telecom analytics workloads.
