@@ -477,3 +477,5 @@ load.py
 snow--.tf
 dbt/coretelecom/.user.yml
 dbt/telecom/profiles.yml 
+
+profiles.yml

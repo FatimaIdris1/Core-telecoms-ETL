@@ -1,0 +1,21 @@
+name: Deploy Airflow to MWAA
+
+on:
+  push:
+    paths:
+      - 'airflow/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: AWS Sync DAGs
+        run: |
+          aws s3 sync airflow s3://YOUR_MWAA_BUCKET/ --delete
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

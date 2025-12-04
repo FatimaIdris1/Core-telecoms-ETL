@@ -1,0 +1,29 @@
+name: Deploy AWS Infrastructure
+
+on:
+  push:
+    paths:
+      - 'aws_infrastructure/**'
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: aws_infrastructure/
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: aws_infrastructure/
+        run: terraform plan
+
+      - name: Terraform Apply (Production)
+        if: github.ref == 'refs/heads/main'
+        working-directory: aws_infrastructure/
+        run: terraform apply -auto-approve
