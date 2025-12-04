@@ -232,7 +232,6 @@ This project follows a **DataOps CI/CD approach**, meaning infrastructure, ETL, 
 ## **Docker & Docker Compose Overview**
 
 This setup uses a custom Docker image (coretelecoms-etl:latest) and docker-compose to provide a full ETL and data workflow environment. Airflow orchestrates pipelines, dbt builds Snowflake models, and Terraform manages infrastructure, all in isolated containers with code synced from your host machine.
----
 
 ### **Docker Image**
 
