@@ -149,11 +149,3 @@ aws_infrastructure/
 This section provisions the entire environment including VPC networking, IAM roles, secret storage, S3 buckets, PostgreSQL access, and Snowflake cloud resources.
 
 ---
-
-## Future Improvements
-
-* Add an architecture diagram for visual representation
-* Implement quality checks using Great Expectations or dbt tests
-* Implement CDC for real-time ingestion of Postgres complaint tables
-* Add orchestration error alerts via Slack or email
-
