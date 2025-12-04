@@ -1,0 +1,4 @@
+{{ config(materialized='view') }}
+
+SELECT *
+FROM CORETELECOM_DB.CORETELECOM_STAGING.CALL_LOGS_CLEANED

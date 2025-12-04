@@ -1,0 +1,117 @@
+version: 2
+
+models:
+  - name: call_logs_cleaned
+    description: "Cleaned call logs with customer and agent information."
+    columns:
+      - name: call_id
+        description: "Unique identifier for each call."
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer identifier from the customer dimension."
+        tests:
+          - not_null
+      - name: customer_name
+        description: "Name of the customer."
+      - name: gender
+        description: "Gender of the customer."
+      - name: date_of_birth
+        description: "Date of birth of the customer."
+      - name: agent_id
+        description: "Agent identifier from the agent dimension."
+        tests:
+          - not_null
+      - name: agent_name
+        description: "Name of the agent."
+      - name: agent_state
+        description: "State where the agent operates."
+      - name: complaint_category
+        description: "Category of the complaint."
+      - name: call_start_time
+        description: "Time the call started."
+      - name: call_end_time
+        description: "Time the call ended."
+      - name: resolution_status
+        description: "Status of complaint resolution."
+      - name: call_logs_generation_date
+        description: "Date when the call log record was generated."
+
+  - name: web_customer_complaints
+    description: "Web customer complaints with linked customer and agent information."
+    columns:
+      - name: column_1
+        description: "Original column from source file, used as reference."
+      - name: request_id
+        description: "Unique request identifier."
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer identifier."
+        tests:
+          - not_null
+      - name: customer_name
+        description: "Name of the customer."
+      - name: gender
+        description: "Gender of the customer."
+      - name: date_of_birth
+        description: "Date of birth of the customer."
+      - name: complaint_category
+        description: "Category of the complaint."
+      - name: agent_id
+        description: "Agent identifier."
+        tests:
+          - not_null
+      - name: agent_name
+        description: "Name of the agent."
+      - name: agent_state
+        description: "State of the agent."
+      - name: resolution_status
+        description: "Status of complaint resolution."
+      - name: request_date
+        description: "Date when the complaint was submitted."
+      - name: resolution_date
+        description: "Date when the complaint was resolved."
+      - name: web_form_generation_date
+        description: "Date when the web complaint form was generated."
+
+  - name: social_media_complaint
+    description: "Social media complaints linked to customers and agents."
+    columns:
+      - name: complaint_id
+        description: "Unique identifier for each social media complaint."
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer identifier."
+        tests:
+          - not_null
+      - name: customer_name
+        description: "Name of the customer."
+      - name: gender
+        description: "Gender of the customer."
+      - name: date_of_birth
+        description: "Date of birth of the customer."
+      - name: complaint_category
+        description: "Category of the complaint."
+      - name: agent_id
+        description: "Agent identifier."
+        tests:
+          - not_null
+      - name: agent_name
+        description: "Name of the agent."
+      - name: agent_state
+        description: "State of the agent."
+      - name: resolution_status
+        description: "Status of complaint resolution."
+      - name: request_date
+        description: "Date when the complaint was submitted."
+      - name: resolution_date
+        description: "Date when the complaint was resolved."
+      - name: media_channel
+        description: "Channel used for the social media complaint."
+      - name: media_complaint_generation_date
+        description: "Date when the social media complaint record was generated."

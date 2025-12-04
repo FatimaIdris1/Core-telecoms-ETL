@@ -1,0 +1,36 @@
+models:
+  - name: dim_customers
+    description: "Dimension table containing customer information."
+    columns:
+      - name: customer_id
+        description: "Unique identifier for each customer."
+        tests:
+          - not_null
+          - unique
+      - name: name
+        description: "Customer name."
+      - name: gender
+        description: "Gender of the customer."
+      - name: date_of_birth
+        description: "Date of birth of the customer."
+      - name: signup_date
+        description: "Customer account signup date."
+      - name: email
+        description: "Customer email address."
+      - name: address
+        description: "Customer address."
+
+  - name: dim_agents
+    description: "Dimension table containing agent information."
+    columns:
+      - name: id
+        description: "Unique identifier for each agent."
+        tests:
+          - not_null
+          - unique
+      - name: name
+        description: "Agent name."
+      - name: experience
+        description: "Years of experience of the agent."
+      - name: state
+        description: "State where the agent operates."

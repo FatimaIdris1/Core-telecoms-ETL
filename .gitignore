@@ -473,6 +473,7 @@ airflow/.env
 snowflake/
 
 load.py
-transform.py
 
 snow--.tf
+dbt/coretelecom/.user.yml
+dbt/telecom/profiles.yml 

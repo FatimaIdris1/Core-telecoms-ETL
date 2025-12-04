@@ -51,6 +51,24 @@ media_rename_map = {
     "MediaComplaintGenerationDate": "media_complaint_generation_date"
 }
 
+agents_rename_map = {
+    "iD": "id",
+    "NamE": "name",
+    "experience": "experience",
+    "state": "state"
+}
+
+customer_rename_map = {
+    "customer_id": "customer_id",
+    "name": "name",
+    "Gender": "gender",
+    "DATE of biRTH": "date_of_birth",
+    "signup_date": "signup_date",
+    "email": "email",
+    "address": "address"
+}
+
+
 # -------------------------------
 # DAG defaults
 # -------------------------------
@@ -154,7 +172,30 @@ with DAG(
             }
         )
 
-        call_log_transform >> web_data_transform >> media_data_transform
+        agents_transform = PythonOperator(
+            task_id="agents_transform",
+            python_callable=transform_etl,
+            op_kwargs={
+                "s3_bucket": "coretelecomms-dl",
+                "raw_prefix": "agents.parquet",
+                "staging_prefix": "staging/agents/",
+                "rename_map": agents_rename_map
+            }
+        )
+
+        customers_transform = PythonOperator(
+            task_id="customers_transform",
+            python_callable=transform_etl,
+            op_kwargs={
+                "s3_bucket": "coretelecomms-dl",
+                "raw_prefix": "customers/",
+                "staging_prefix": "staging/customers/",
+                "rename_map": customer_rename_map
+            }
+        )
+        
+
+        call_log_transform >> web_data_transform >> media_data_transform >> agents_transform >> customers_transform
 
     # -------------------------------------
     # Load into Snowflake

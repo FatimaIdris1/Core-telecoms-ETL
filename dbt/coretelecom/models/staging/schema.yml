@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: agents
+    description: "Staging view for agents"
+  - name: customers
+    description: "Staging view for customers"
+  - name: call_logs_cleaned
+    description: "Staging view for cleaned call logs"
+  - name: social_media_complaint
+    description: "Staging view for social media complaints"
+  - name: web_customer_complaints
+    description: "Staging view for web customer complaints"
