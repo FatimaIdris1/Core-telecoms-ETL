@@ -418,7 +418,7 @@ FodyWeavers.xsd
 *.msp
 
 
-## FILES THAT CONCERN ME
+## FILES THAT CONCERN
 # Ignore folder y
 y/
 
@@ -441,6 +441,7 @@ aws/
 aws/tfplan
 aws_infrastructure/.terraform.lock.hcl
 aws_infrastructure/.terraform/
+aws_infrastructure/variable.tf
 
 # Logs and temp files
 pipeline.log
@@ -463,4 +464,15 @@ airflow/get-docker.sh
 airflow/simple
 airflow/simple_auth_manager_passwords.json.generated
 airflow/Logs
+airflow/dags/plugins/test.py
+airflow/dags/plugins/.env
+airflow/dags/plugins/trial.py
+
 airflow/.env
+
+snowflake/
+
+load.py
+transform.py
+
+snow--.tf

@@ -65,9 +65,8 @@ resource "aws_iam_policy" "airflow_secrets_access" {
           "secretsmanager:DescribeSecret"
         ]
         Resource = [
-          aws_secretsmanager_secret.google_cloud_secrets.arn,
-          aws_db_instance.coretelecomms_db_instance.master_user_secret[0].secret_arn
-        ]
+          aws_secretsmanager_secret.google_cloud_secrets.arn
+                  ]
       }
     ]
   })

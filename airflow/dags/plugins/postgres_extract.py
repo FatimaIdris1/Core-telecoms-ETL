@@ -30,16 +30,11 @@ class PostgresToS3:
         self.source_region_name = source_region_name
         self.target_region_name = target_region_name
 
-        # --------------------------------------
-        # SOURCE ACCOUNT: Create SSM client FROM .ENV
-        # --------------------------------------
+        # Source AWS client
         src_access = os.getenv("SOURCE_AWS_ACCESS_KEY_ID")
         src_secret = os.getenv("SOURCE_AWS_SECRET_ACCESS_KEY")
-        
-
         if not src_access or not src_secret:
             raise ValueError("Source AWS credentials not found in .env file")
-
         self.ssm = boto3.client(
             "ssm",
             region_name=source_region_name,
@@ -47,15 +42,11 @@ class PostgresToS3:
             aws_secret_access_key=src_secret
         )
 
-        # --------------------------------------
-        # TARGET ACCOUNT: Create S3 client FROM .ENV
-        # --------------------------------------
+        # Target AWS client
         tgt_access = os.getenv("AWS_ACCESS_KEY_ID")
         tgt_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
-
         if not tgt_access or not tgt_secret:
             raise ValueError("Target AWS credentials not found in .env file")
-
         self.s3 = boto3.client(
             "s3",
             region_name=target_region_name,
@@ -63,22 +54,10 @@ class PostgresToS3:
             aws_secret_access_key=tgt_secret
         )
 
-        # --------------------------------------
-        # Load Postgres credentials from SSM
-        # --------------------------------------
+        # Load Postgres credentials
         self.db_params = self._load_db_credentials()
 
     def _load_db_credentials(self):
-        """
-        Load database credentials from AWS SSM Parameter Store.
-        Expected parameters under the ssm_prefix:
-        - db_host
-        - db_name
-        - db_username
-        - db_password
-        - db_port
-        - table_schema_name
-        """
         keys = {
             "host": "db_host",
             "database": "db_name",
@@ -87,7 +66,6 @@ class PostgresToS3:
             "port": "db_port",
             "schema": "table_schema_name"
         }
-
         params = {}
         for k, key in keys.items():
             full_path = f"{self.ssm_prefix}{key}"
@@ -98,23 +76,19 @@ class PostgresToS3:
             except Exception as e:
                 logger.error(f"Failed to load parameter {full_path}: {str(e)}")
                 raise
-
         return params
 
-    # --------------------------------------
-    # Main Execution Logic
-    # --------------------------------------
     def execute(self, skip_existing=True):
         metadata = OperationMetadata(
             operation_name="Postgres_To_S3",
             start_time=datetime.now()
         )
+        metadata.records_skipped = 0
+        metadata.records_success = 0
+        skipped_tables = []
 
-        conn = None
-        cursor = None
-
+        conn = cursor = None
         try:
-            # Connect to Postgres using SSM credentials
             logger.info(f"Connecting to PostgreSQL at {self.db_params['host']}")
             conn = psycopg2.connect(
                 host=self.db_params["host"],
@@ -125,7 +99,6 @@ class PostgresToS3:
             )
             cursor = conn.cursor()
 
-            # Fetch tables in schema
             logger.info(f"Fetching tables from schema: {self.db_params['schema']}")
             cursor.execute(
                 """
@@ -141,76 +114,52 @@ class PostgresToS3:
             metadata.records_processed = len(tables)
             logger.info(f"Found {len(tables)} tables to process")
 
-            # ------------------------------------------
-            # List existing target parquet files
-            # ------------------------------------------
+            # Existing S3 files
             existing_files = set()
             prefix = f"{self.db_params['schema']}/"
-
             try:
-                response = self.s3.list_objects_v2(
-                    Bucket=self.s3_bucket,
-                    Prefix=prefix
-                )
-
+                response = self.s3.list_objects_v2(Bucket=self.s3_bucket, Prefix=prefix)
                 if "Contents" in response:
                     existing_files = {obj["Key"] for obj in response["Contents"]}
                     logger.info(f"Found {len(existing_files)} existing files in S3")
             except Exception as e:
                 logger.warning(f"Could not list S3 objects: {str(e)}")
 
-            # ------------------------------------------
-            # Export each table
-            # ------------------------------------------
+            # Process tables
             for table in tables:
                 key = f"{self.db_params['schema']}/{table}.parquet"
-
-                # Skip if file already exists
                 if skip_existing and key in existing_files:
                     logger.info(f"Skipping existing file: {key}")
                     metadata.records_skipped += 1
+                    skipped_tables.append(table)
                     continue
 
                 logger.info(f"Processing table: {table}")
-                
-                # Fetch data from table
                 cursor.execute(sql.SQL("SELECT * FROM {}.{}").format(
                     sql.Identifier(self.db_params["schema"]),
                     sql.Identifier(table)
                 ))
-                
                 rows = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]
                 df = pd.DataFrame(rows, columns=columns)
-                
                 logger.info(f"Table {table} has {len(df)} rows and {len(columns)} columns")
 
-                # Convert to parquet
                 buffer = io.BytesIO()
                 df.to_parquet(buffer, index=False)
-
-                # Upload to S3
-                self.s3.put_object(
-                    Bucket=self.s3_bucket,
-                    Key=key,
-                    Body=buffer.getvalue()
-                )
-
+                self.s3.put_object(Bucket=self.s3_bucket, Key=key, Body=buffer.getvalue())
                 logger.info(f"Successfully uploaded {key} to S3")
                 metadata.records_success += 1
 
             metadata.complete("SUCCESS")
+            if skipped_tables:
+                logger.info(f"Skipped tables: {skipped_tables}")
 
         except Exception as e:
             logger.error(f"Error during execution: {str(e)}")
             metadata.complete("FAILED", str(e))
-        
         finally:
-            # Ensure database connections are closed
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close()
+            if cursor: cursor.close()
+            if conn: conn.close()
             logger.info("Database connections closed")
 
         metadata.log_summary()

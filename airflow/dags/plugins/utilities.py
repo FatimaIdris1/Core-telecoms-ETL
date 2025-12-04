@@ -32,6 +32,8 @@ class OperationMetadata:
     records_processed: int = 0
     records_success: int = 0
     records_failed: int = 0
+    records_skipped = 0   # <-- add this
+
     error_message: Optional[str] = None
     additional_info: Optional[Dict] = None
 
@@ -57,6 +59,7 @@ class OperationMetadata:
         logger.info(f"Records Processed: {self.records_processed}")
         logger.info(f"Records Success: {self.records_success}")
         logger.info(f"Records Failed: {self.records_failed}")
+        logger.info(f"Records Skipped: {self.records_skipped}")
         if self.error_message:
             logger.info(f"Error: {self.error_message}")
         if self.additional_info:
