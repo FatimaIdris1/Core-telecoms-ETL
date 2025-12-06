@@ -1,5 +1,5 @@
 resource "aws_secretsmanager_secret" "google_cloud_secrets" {
- name = "google_cloud_credv1"
+ name = "google_cloud_credv2"
 }
 
 resource "aws_secretsmanager_secret_version" "google_cloud_secrets_version" {

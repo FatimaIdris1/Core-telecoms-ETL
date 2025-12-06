@@ -1,0 +1,53 @@
+version: '3.8'
+services:
+    postgres:
+      image: postgres:15
+      environment:
+        POSTGRES_USER: airflow
+        POSTGRES_PASSWORD: airflow
+        POSTGRES_DB: airflow
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      healthcheck:
+        test: ["CMD", "pg_isready", "-U", "airflow"]
+        interval: 5s
+        retries: 5
+
+
+    terraform:
+      build: .
+      command: ["/opt/aws_infrastructure/docker/terraform-run.sh"]
+      env_file: .env
+      depends_on:
+      - postgres
+      restart: "no"
+
+
+    airflow:
+      build: .
+      environment:
+        - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+        - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      env_file: .env
+      volumes:
+        - .:/opt/coretelecom
+      ports:
+        - "8080:8080"
+      depends_on:
+        - postgres
+        - terraform
+      command: webserver
+
+
+    scheduler:
+      build: .
+      env_file: .env
+      volumes:
+        - .:/opt/coretelecom
+      depends_on:
+        - airflow
+        - postgres
+      command: scheduler
+
+volumes:
+  postgres_data:

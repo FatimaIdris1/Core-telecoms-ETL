@@ -459,7 +459,6 @@ airflow/.venv
 airflow/config
 airflow/airflow.cfg
 airflow/airflow.db
-airflow/docker-compose.yaml
 airflow/get-docker.sh 
 airflow/simple
 airflow/simple_auth_manager_passwords.json.generated
@@ -479,3 +478,6 @@ dbt/coretelecom/.user.yml
 dbt/telecom/profiles.yml 
 
 profiles.yml
+
+.dockerignore
+structure.txt

@@ -1,6 +1,9 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
+from airflow.providers.smtp.operators.smtp import EmailOperator
 from airflow.utils.task_group import TaskGroup
+from airflow.utils.email import send_email_smtp
 from pendulum import datetime
 
 # Your existing plugin imports
@@ -12,6 +15,33 @@ from plugins.transform import transform_etl
 
 # New Snowflake integration
 from plugins.snowflake_load import process_all_folders
+
+
+def notify_failure(context):
+    """
+    Custom function to send an email alert when a task fails.from airflow.utils.email import send_email_smtp
+    """
+    task_instance = context.get('task_instance')
+    dag = context.get('dag')
+    dag_id = dag.dag_id if dag else "unknown_dag"
+    task_id = task_instance.task_id if task_instance else "unknown_task"
+    execution_date = context.get('execution_date')
+    log_url = task_instance.log_url if task_instance else ""
+
+    subject = f"Airflow Task Failed: {dag_id}.{task_id}"
+    html_content = f"""
+    <h3 style="color:red;">Task Failed in DAG: {dag_id}</h3>
+    <p><strong>Task:</strong> {task_id}</p>
+    <p><strong>Execution Date:</strong> {execution_date}</p>
+    <p><a href="{log_url}">View Task Log</a></p>
+    """
+
+    send_email_smtp(
+        to="fatimaidris388@gmail.com",
+        subject=subject,
+        html_content=html_content,
+    )
+
 
 # -------------------------------
 # Column rename maps
@@ -133,7 +163,7 @@ with DAG(
             op_kwargs={"skip_existing": True}
         )
 
-        [s3_social_media, s3_call_logs] >> postgres_extract
+        [s3_social_media, s3_call_logs, postgres_extract]
 
     # -------------------------------------
     # Transformations
@@ -195,7 +225,8 @@ with DAG(
         )
         
 
-        call_log_transform >> web_data_transform >> media_data_transform >> agents_transform >> customers_transform
+        [call_log_transform, web_data_transform, media_data_transform, agents_transform, customers_transform]
+
 
     # -------------------------------------
     # Load into Snowflake
@@ -206,8 +237,33 @@ with DAG(
             python_callable=process_all_folders
         )
 
+    send_mail = EmailOperator(
+    task_id='send_results',
+    to='abdmlk.911@gmail.com',
+    from_email='fatimaidris388@gmail.com',
+    subject='DAG Completed Successfully',
+    html_content="""
+        <h3> All Data Successfully Loaded!</h3>
+        <p>Hello,</p>
 
-    # -------------------------------------
-    # DAG Dependencies--Change 33
-    # -------------------------------------
-    single_load >> incremental_load >> transformations >> snowflake_load
+        <p>This is to notify you that the latest data pipeline task has completed 
+        successfully. All data has been loaded into <strong>Snowflake</strong> and 
+        the <strong>dbt models are now active and up-to-date</strong>.</p>
+
+        <p>You can verify the results in your Snowflake account:</p>
+        <ul>
+            <li> Data has been fully uploaded</li>
+            <li> Schema is refreshed</li>
+        </ul>
+        
+        <br>
+        <p>Kind regards,</p>
+        <p><strong>Airflow Pipeline</strong></p>
+    """,
+    conn_id='smtp_conn',
+)
+
+
+    # DAG Dependencies--Change 35
+
+    single_load >> incremental_load >> transformations >> snowflake_load >> send_mail
