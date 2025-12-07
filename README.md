@@ -4,7 +4,7 @@
 
 CoreTelecoms, a major telecom provider in the United States, is facing increasing customer churn due to unresolved and poorly managed complaints. The organization receives thousands of complaints daily from multiple sources such as call logs, social media, website forms, and customer care centers. However, due to inconsistent formats, siloed teams, and manual reporting processes, insights are delayed and customer retention continues to decline.
 
-This project implements a unified data engineering pipeline that automates ingestion, storage, and processing of all customer complaint sources into Snowflake, enabling analytics and reporting from a single trusted dataset. The pipeline eliminates manual bottlenecks and creates a foundation for real-time monitoring, customer service optimization, and churn reduction.
+The project implements a unified data engineering pipeline that automates ingestion, storage, and processing of all customer complaint sources into Snowflake, enabling analytics and reporting from a single trusted dataset. The pipeline eliminates manual bottlenecks and creates a foundation for real-time monitoring, customer service optimization, and churn reduction.
 
 ---
 
@@ -32,6 +32,8 @@ Daily datasets uploaded to S3 may contain multiple files per source. Files are m
 * AWS IAM
 * AWS SSM Parameter Store
 * AWS Postgres (Transactional DB)
+* Subnets and Subnet groups
+* AWS Secret MAnager
 
 ### Data Warehouse
 
@@ -251,7 +253,7 @@ This provisions the entire environment including networking, IAM roles, secret s
 
 ## dbt Models (Facts and Dimensions)
 
-The analytics layer transforms raw data from Snowflake staging into clean, analysis-ready tables under `CORETELECOM_TRANSFORMED`.
+The analytics layer transforms raw data from Snowflake staging into clean, analysis-ready tables within the database.
 
 ### Fact Tables
 
@@ -272,7 +274,7 @@ The analytics layer transforms raw data from Snowflake staging into clean, analy
 
 ## CI/CD Pipeline
 
-This project follows a **DataOps CI/CD approach** for infrastructure, ETL, and analytics models.
+This part of the project follows a **DataOps CI/CD approach** for infrastructure, ETL, and analytics models. This ensures only validated DAGs, Terraform plans, and dbt models are merged. CD deploys infrastructure, runs ETL pipelines, and updates warehouse models automatically.
 
 | Component                         | CI (Checks Before Merge)                  | CD (Deployment)                           |
 | --------------------------------- | ----------------------------------------- | ----------------------------------------- |
@@ -280,13 +282,13 @@ This project follows a **DataOps CI/CD approach** for infrastructure, ETL, and a
 | Airflow (DAGs + Plugins)          | Lint and test Python DAGs                 | Upload DAGs to MWAA S3 bucket             |
 | dbt (Warehouse Models)            | Validate SQL (`dbt test` & `dbt compile`) | Build models in Snowflake (`dbt run`)     |
 
-CI ensures only validated DAGs, Terraform plans, and dbt models are merged. CD deploys infrastructure, runs ETL pipelines, and updates warehouse models automatically.
 
 ---
 
 ## Docker & Docker Compose Overview
 
-This setup uses a custom Docker image (`coretelecoms-etl:latest`) and docker-compose to provide a full ETL and data workflow environment:
+This setup uses a custom Docker image (`coretelecoms-etl:latest`) and docker-compose to provide a full ETL and data workflow environment. The 
+volumes sync local project files with containers to maintain up-to-date code.:
 
 1. **Terraform container**
 
@@ -301,7 +303,6 @@ This setup uses a custom Docker image (`coretelecoms-etl:latest`) and docker-com
    * Transforms Snowflake staging data into facts and dimensions
    * Commands: `dbt run --project-dir /opt/project/dbt`
 
-Volumes sync local project files with containers to maintain up-to-date code.
 
 ---
 
@@ -335,7 +336,7 @@ docker-compose exec terraform terraform apply
 ---
 
 ## Summary
-This project delivers a **comprehensive, end-to-end ETL pipeline** for processing telecom customer complaints from multiple sources into a unified Snowflake data warehouse. The system integrates multiple technologies to automate extraction, transformation, and loading of raw data into a structured, analysis-ready format.
+This project delivers a **comprehensive, end-to-end ETL pipeline** for processing telecom customer complaints from multiple sources into a unified Snowflake data warehouse. The system integrates multiple technologies to automate extraction, transformation, and loading of raw data into a structured, analysis-ready format, ensuring scalability and reliability.
 
 Key highlights:
 
@@ -347,8 +348,6 @@ Key highlights:
 * **dbt Analytics Layer:** Transforms raw staging data into facts and dimensions, following a star schema model for robust analysis.
 * **CI/CD Integration:** Validates Terraform, Airflow DAGs, and dbt models before merging, ensuring high-quality, production-ready deployments.
 * **Containerized Workflow:** Docker Compose provides a reproducible environment for development, testing, and deployment, keeping Airflow, dbt, and Terraform isolated but synchronized with local code.
-
-The pipeline ensures **scalable, reliable, and traceable data processing**, providing a solid foundation for telecom analytics, operational insights, and customer retention strategies.
 
 ---
 
