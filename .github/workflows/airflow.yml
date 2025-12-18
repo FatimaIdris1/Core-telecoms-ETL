@@ -1,28 +1,33 @@
-name: Trigger Airflow DAG
+name: Trigger Airflow DAG (MWAA)
 
 on:
-  push:
-    paths:
-      - 'airflow/dags/pipeline.py'
   workflow_dispatch:
 
 jobs:
   trigger-dag:
     runs-on: ubuntu-latest
 
-    # steps:
-    #   - name: Checkout repository
-    #     uses: actions/checkout@v3
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
 
-    #   - name: Trigger Airflow DAG
-    #     env:
-    #       AIRFLOW_URL: ${{ secrets.AIRFLOW_URL }}      
-    #       AIRFLOW_USERNAME: ${{ secrets.AIRFLOW_USERNAME }}
-    #       AIRFLOW_PASSWORD: ${{ secrets.AIRFLOW_PASSWORD }}
-    #       DAG_ID: core_etl_pipeline
-    #     run: |
-    #       echo "Triggering DAG $DAG_ID"
-    #       curl -X POST "$AIRFLOW_URL/api/v1/dags/$DAG_ID/dagRuns" \
-    #       -u "$AIRFLOW_USERNAME:$AIRFLOW_PASSWORD" \
-    #       -H "Content-Type: application/json" \
-    #       -d '{"conf":{}}'
+      - name: Trigger Airflow DAG
+        env:
+          AIRFLOW_URL: ${{ secrets.AIRFLOW_URL }}
+          DAG_ID: core_etl_pipeline
+        run: |
+          aws mwaa create-cli-token \
+            --name coretelecom-mwaa-env \
+            --region us-west-2 > token.json
+
+          export CLI_TOKEN=$(jq -r '.CliToken' token.json)
+          export WEB_SERVER_HOSTNAME=$(jq -r '.WebServerHostname' token.json)
+
+          curl -X POST "https://$WEB_SERVER_HOSTNAME/aws_mwaa/cli" \
+            -H "Authorization: Bearer $CLI_TOKEN" \
+            -H "Content-Type: text/plain" \
+            --data "dags trigger $DAG_ID"
