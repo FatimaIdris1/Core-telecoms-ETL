@@ -6,12 +6,12 @@
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::068657603290:user/384c1000-s"
+          AWS = "arn:aws:iam::<account-id>:role/<role-name>"
         }
         Action = "sts:AssumeRole"
         Condition = {
           StringEquals = {
-            "sts:ExternalId" = "KSB23139_SFCRole=4_Uc/Anv69uzBAxdoqLVqJCKfnKuE="
+            "sts:ExternalId" = ""
           }
         }
       }

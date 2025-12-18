@@ -482,5 +482,5 @@ profiles.yml
 .dockerignore
 structure.txt
 
-workflows/dbt.yml
-workflows/terraform.yml
+.github/workflows/dbt.yml
+.github/workflows/terraform.yml

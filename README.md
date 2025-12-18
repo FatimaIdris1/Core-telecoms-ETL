@@ -39,11 +39,11 @@ Daily datasets uploaded to S3 may contain multiple files per source. Files are m
 
 * Snowflake
 
-### Data Orchestration
+### Pipeline Orchestration
 
 * Apache Airflow
 
-### Infrastructure Automation
+### Infrastructure Creation and Deployment
 
 * Terraform
 
@@ -67,7 +67,7 @@ Daily datasets uploaded to S3 may contain multiple files per source. Files are m
 * Automated table creation in Snowflake
 * Schema inference for dynamic loading
 * Fully automated IAM and Snowflake configuration with Terraform
-* Logging and monitoring using Airflow
+* Logging and monitoring
 * Email notifications for pipeline success and failure using Gmail SMTP
 
 ---
@@ -163,6 +163,8 @@ All Snowflake stages, roles, and schema configurations are automatically generat
 
 `core_etl_pipeline`
 
+![alt text](dag.png)
+
 ### Primary Tasks
 
 ```
@@ -231,6 +233,67 @@ Airflow/ dags/
 ```
 <img width="1207" height="872" alt="core_etl_pipeline-graph" src="https://github.com/user-attachments/assets/69e4c052-acf5-4678-8f35-e606a877fe85" />
 
+
+The DAG orchestrates an end-to-end data ingestion and transformation pipeline. It extracts data from multiple source systems (S3, Google Sheets, and RDS), standardizes and converts all data into Parquet format, stores it in a centralized raw S3 bucket, applies dataset-specific transformations, and finally loads the processed data into **Snowflake staging tables** for downstream analytics and dbt transformations. The pipeline is organized into logical **task groups** to improve readability, scalability, and maintainability.
+
+
+### 1. Single Load Task Group
+
+The **Single Load** task group handles datasets that require a one-time or full extraction from their respective sources.
+
+#### a. Customers – Full Load from S3
+- Customer data is sourced from an external **AWS S3 bucket** where it originally arrives in **CSV format**.
+- The DAG extracts the data and converts it into **Parquet format**.
+- Converted files are stored in the project’s **raw S3 bucket**.
+- This ensures consistent data formats and optimized storage for downstream processing.
+
+#### b. Agents – Google Sheets Extraction
+- Agent data (agent lists and details) is extracted from **Google Sheets**.
+- The data is converted into **Parquet format** during extraction.
+- The output is stored in the project’s **raw S3 bucket**, aligned with the pipeline’s storage standards.
+
+
+### 2. Incremental Load Task Group
+
+The **Incremental Load** task group processes datasets that are updated regularly and must be ingested incrementally.
+
+#### a. Social Media Complaints – Incremental S3 Load
+- Social media complaints data is sourced from an **S3 bucket** and arrives in **JSON format**.
+- The data contains online complaints along with relevant metadata.
+- New files are uploaded daily to the source bucket.
+- The DAG processes only new files incrementally, converts them to **Parquet format**, and stores them in the project’s **raw S3 bucket**.
+
+#### b. Call Center Logs – Incremental S3 Load
+- Call center logs are sourced from S3 as **daily CSV files**.
+- The DAG iterates over incoming files daily and checks whether a file has already been processed using the **file name** as a reference.
+- Previously loaded files are skipped.
+- New files are converted to **Parquet format** and stored in the project’s **raw S3 bucket**.
+
+#### c. Website Complaints – Incremental RDS Extraction
+- Website complaint data resides in an **RDS database table**.
+- The DAG extracts new records incrementally on a daily basis.
+- Extracted data is written as **Parquet files** into the project’s **raw S3 bucket**.
+
+
+### 3. Transformations Task Group
+
+The **Transformations** task group applies dataset-specific cleaning and standardization.
+
+- Each dataset (customers, agents, social media, call logs, and website complaints) is transformed independently.
+- Transformations include:
+  - Standardizing table structures
+  - Normalizing column names to be separated with underscores.
+- All transformed datasets remain in **Parquet format**.
+- The output of this task group is curated data ready for warehouse loading.
+
+
+### 4. Snowflake Load Task Group
+
+- Transformed Parquet files are loaded from S3 into **Snowflake staging tables**.
+- This stage acts as the handoff point between Airflow and downstream analytics workflows.
+- Further transformations are performed using **dbt**, which operates outside the Airflow pipeline.
+
+
 ---
 
 ## Terraform Infrastructure Layout
@@ -248,6 +311,81 @@ aws_infrastructure/
 ```
 
 This provisions the entire environment including networking, IAM roles, secret storage, S3 buckets, Postgres access, and Snowflake cloud resources.
+## File Descriptions
+
+#### `iam.tf`
+
+* Defines a dedicated **IAM user for Apache Airflow**.
+* Generates:
+  * Access key
+  * Secret access key
+* Attaches an IAM policy granting **read and write access** to the specified **raw data S3 bucket**.
+* Enables Airflow to:
+  * Read source data
+  * Write processed and converted Parquet files
+* Access is scoped to the required bucket only, following the **principle of least privilege**.
+
+
+
+#### `main.tf`
+
+* Serves as the **core Terraform configuration file**.
+* Configures a **remote Terraform backend** using an **S3 bucket** to store Terraform state files.
+  * Ensures state is centralized and not stored locally.
+* Defines the **Snowflake provider configuration**, enabling Terraform to manage Snowflake resources alongside AWS infrastructure.
+
+
+
+#### `secret_manager.tf`
+
+* Manages secrets using **AWS Secrets Manager**.
+* Stores **Google Cloud service account credentials** used for:
+  * Accessing Google Sheets
+* Ensures sensitive credentials are:
+  * Securely stored
+  * Not hardcoded in the codebase
+  * Retrieved securely by Airflow at runtime
+
+
+#### `security_groups.tf`
+
+* Creates and manages AWS security groups to control network access.
+* Includes security groups for:
+  * Airflow web server
+  * Database resources
+* Defines:
+  * Inbound and outbound traffic rules
+  * VPC-level access controls
+* Ensures secure communication between Airflow, databases, and other AWS services.
+
+
+#### `subnets.tf`
+
+* Creates VPC subnets across two Availability Zones.
+* Provides:
+  * Network isolation
+  * High availability for deployed resources
+* Subnets are associated with the specified VPC.
+
+
+#### `subnet_groups.tf`
+
+* Defines **database subnet groups**.
+* Used to control where database resources are deployed within the VPC.
+* Ensures databases run only within approved subnets created across multiple Availability Zones.
+
+
+#### `snowflake.tf`
+
+* Provisions and manages **Snowflake infrastructure** using Terraform.
+* Includes:
+  * Snowflake user role
+  * IAM policy for the Snowflake role
+  * Storage integration between Snowflake and S3
+  * Snowflake database and schema
+  * File format definitions
+  * External stage configuration for loading data from S3
+* Enables secure and scalable data ingestion from S3 into Snowflake.
 
 ---
 
@@ -278,9 +416,7 @@ This part of the project follows a **DataOps CI/CD approach** for infrastructure
 
 | Component                         | CI (Checks Before Merge)                  | CD (Deployment)                           |
 | --------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| Terraform (AWS + Snowflake Infra) | Validate configuration (`terraform plan`) | Deploy infrastructure (`terraform apply`) |
 | Airflow (DAGs + Plugins)          | Lint and test Python DAGs                 | Upload DAGs to MWAA S3 bucket             |
-| dbt (Warehouse Models)            | Validate SQL (`dbt test` & `dbt compile`) | Build models in Snowflake (`dbt run`)     |
 
 
 ---
